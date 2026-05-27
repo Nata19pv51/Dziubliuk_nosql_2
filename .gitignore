@@ -1,0 +1,6 @@
+.env
+*.json
+*.zip
+*.parquet
+*.ipynb
+embeddings
