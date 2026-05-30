@@ -38,6 +38,20 @@ def print_results(results, title="Результати пошуку:"):
         print(f"Категорія: {metadata['category']} | Рік: {metadata['year']}")
         print(f"Абстракт: {full_abstract[:150]}...\n")
         
+def print_local_top(scores, reverse=False, title=""):
+    print(f"\n--- {title} ---")
+    # Якщо шукаємо відстань, нам потрібні найменші значення (від початку)
+    # Якщо схожість - найбільші (з кінця, тому беремо -5:)
+    if reverse:
+        top_indices = np.argsort(scores)[:TOP_K]
+    else:
+        top_indices = np.argsort(scores)[-TOP_K:][::-1]
+        
+    for i in top_indices:
+        score = scores[i]
+        title = df.iloc[i]["title"]
+        print(f"[{score:.4f}] {title[:80]}...")
+
         
 query_text = "teaching machines to recognize objects in pictures"
 query_vector = encode_query(query_text)
@@ -85,39 +99,18 @@ print("Перевірка Фільтру B за допомогою pandas")
 matches_filter_B = len(df[(df['year'] < 2015)])
 print(f"Локально знайдено статей для Фільтру B: {matches_filter_B}")
 
-
-# 5. Порівняти різні метрики схожості на локальних ембеддингах
 print("****************** Метрики схожості на локальних ембеддингах *******************")
-
-# Завантажуємо всі ембеддинги
 all_embeddings = np.load("embeddings/embeddings.npy")
-query_vec_np = np.array(query_vector) # вектор з першого пошуку
+query_vec_np = np.array(query_vector)                        # вектор з першого пошуку
 
-# Обчислення Dot Product (скалярний добуток)
-dot_products = np.dot(all_embeddings, query_vec_np)
+dot_products = np.dot(all_embeddings, query_vec_np)          # Обчислення Dot Product (скалярний добуток)
 
-# Обчислення Cosine Similarity (косинусна подібність)
 norms_db = norm(all_embeddings, axis=1)
 norm_query = norm(query_vec_np)
 print(norm_query)
-cosine_similarities = dot_products / (norms_db * norm_query)
+cosine_similarities = dot_products / (norms_db * norm_query) # Обчислення Cosine Similarity (косинусна подібність)
 
-# Обчислення L2-distance (евклідова відстань)
-l2_distances = norm(all_embeddings - query_vec_np, axis=1)
-
-def print_local_top(scores, reverse=False, title=""):
-    print(f"\n--- {title} ---")
-    # Якщо шукаємо відстань, нам потрібні найменші значення (від початку)
-    # Якщо схожість - найбільші (з кінця, тому беремо -5:)
-    if reverse:
-        top_indices = np.argsort(scores)[:TOP_K]
-    else:
-        top_indices = np.argsort(scores)[-TOP_K:][::-1]
-        
-    for i in top_indices:
-        score = scores[i]
-        title = df.iloc[i]["title"]
-        print(f"[{score:.4f}] {title[:80]}...")
+l2_distances = norm(all_embeddings - query_vec_np, axis=1)   # Обчислення L2-distance (евклідова відстань)
 
 print_local_top(cosine_similarities, title="Топ-5: Cosine Similarity")
 print_local_top(dot_products, title="Топ-5: Dot Product")
